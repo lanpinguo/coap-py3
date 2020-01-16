@@ -22,7 +22,7 @@ class testResource(coapResource.coapResource):
     
     def GET(self,options=[]):
         
-        print 'GET received'
+        print('GET received')
         
         respCode        = d.COAP_RC_2_05_CONTENT
         respOptions     = []
@@ -47,10 +47,10 @@ testResource.addSecurityBinding((context, d.METHOD_ALL))
 c.addResource(testResource)
 
 for t in threading.enumerate():
-    print t.name
+    print(t.name)
 
 # let the server run
-raw_input('\n\nServer running. Press Enter to close.\n\n')
+input('\n\nServer running. Press Enter to close.\n\n')
 
 # close
 c.close()

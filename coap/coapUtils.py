@@ -42,7 +42,11 @@ def str2buf(str):
 
 def xorStrings(s1,s2):
     assert len(s1) == len(s2)
-    return ''.join(chr(ord(a) ^ ord(b)) for a, b in zip(s1, s2))
+    if isinstance(s1,str):
+        s1 = s2.encode(encoding='utf-8')
+    if isinstance(s2,str):
+        s2 = s2.encode(encoding='utf-8')
+    return b''.join(bytes([(a ^ b)]) for a, b in zip(s1, s2))
 
 def zeroPadString(s1, len):
     return '{:\0>{width}}'.format(s1, width=len)

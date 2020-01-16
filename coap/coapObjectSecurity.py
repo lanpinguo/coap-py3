@@ -15,7 +15,7 @@ import coap.coapOption         as o
 import coap.coapUtils          as u
 
 import binascii
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 
 def encodeOptions(options, lastOptionNum=0):
     encoded = []
@@ -25,6 +25,13 @@ def encodeOptions(options, lastOptionNum=0):
         lastOptionNum = option.optionNumber
     return encoded
 
+def encodePayload(payload):
+    encoded = []
+    if payload:
+        encoded += [d.COAP_PAYLOAD_MARKER]
+        encoded += payload
+    return encoded
+	
 def decodeOptionsAndPayload(rawbytes, currentOptionNumber = 0):
     options = []
     while True:
@@ -63,7 +70,7 @@ def protectMessage(context, version, code, options = [], payload = [], partialIV
     # construct plaintext
     plaintext = []
     plaintext += encodeOptions(optionsClassE)
-    plaintext += m.encodePayload(payload)
+    plaintext += encodePayload(payload)
     plaintext = u.buf2str(plaintext) # convert to string
 
     # construct aad
@@ -269,7 +276,7 @@ def _constructAAD(version, code, optionsSerialized, aeadAlgorithm, requestKid, r
 
     # from https://tools.ietf.org/html/draft-ietf-cose-msg-24#section-5.3
     encStructure = [
-        unicode('Encrypt0'),
+        'Encrypt0',
         '',  # an empty byte string
         externalAad
     ]
@@ -325,8 +332,10 @@ class CCMAlgorithm():
 
         if self.ivLength != len(nonce):
             raise e.oscoapError('IV length mismatch.')
-
-        cipher = AES.new(key, AES.MODE_CCM, nonce, mac_len=self.tagLength)
+        print(type(nonce))
+        if isinstance(nonce,str):
+            nonce = nonce.encode(encoding='utf-8')
+        cipher = AES.new(key, AES.MODE_CCM, nonce,mac_len=self.tagLength)
         if aad:
             cipher.update(aad)
         ciphertext = cipher.encrypt(plaintext)

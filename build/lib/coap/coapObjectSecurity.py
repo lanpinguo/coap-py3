@@ -25,6 +25,13 @@ def encodeOptions(options, lastOptionNum=0):
         lastOptionNum = option.optionNumber
     return encoded
 
+def encodePayload(payload):
+    encoded = []
+    if payload:
+        encoded += [d.COAP_PAYLOAD_MARKER]
+        encoded += payload
+    return encoded
+	
 def decodeOptionsAndPayload(rawbytes, currentOptionNumber = 0):
     options = []
     while True:
@@ -63,7 +70,7 @@ def protectMessage(context, version, code, options = [], payload = [], partialIV
     # construct plaintext
     plaintext = []
     plaintext += encodeOptions(optionsClassE)
-    plaintext += m.encodePayload(payload)
+    plaintext += encodePayload(payload)
     plaintext = u.buf2str(plaintext) # convert to string
 
     # construct aad

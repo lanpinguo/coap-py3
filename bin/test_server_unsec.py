@@ -30,6 +30,31 @@ class testResource(coapResource.coapResource):
         
         return (respCode,respOptions,respPayload)
 
+    def PUT(self,options,payload):
+        
+        print('PUT received')
+        print('payload: ')
+        print(payload)
+        
+        respCode        = d.COAP_RC_2_05_CONTENT
+        respOptions     = []
+        respPayload     = b'put process done'
+        
+        return (respCode,respOptions,respPayload)
+
+
+    def POST(self,options,payload):
+        
+        print('POST received')
+        print('payload: ')
+        print(payload)
+        
+        respCode        = d.COAP_RC_2_05_CONTENT
+        respOptions     = []
+        respPayload     = b'post process done'
+        
+        return (respCode,respOptions,respPayload)
+
 # open
 c = coap.coap(ipAddress='::1')
 

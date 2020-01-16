@@ -32,6 +32,28 @@ try:
     print('=====')
     print(''.join([chr(b) for b in p]))
     print('=====')
+
+    # put value of 'test' resource
+    payload = b'new node : fd00::2'
+    p = c.PUT('coap://[{0}]/test'.format(SERVER_IP),
+              confirmable=True,
+              payload = payload)
+
+    print('=====')
+    print(''.join([chr(b) for b in p]))
+    print('=====')
+
+    # post value of 'test' resource
+    payload = b'new mote node : fd00::2'
+    p = c.POST('coap://[{0}]/mote'.format(SERVER_IP),
+              confirmable=True,
+              payload = payload)
+
+    print('=====')
+    print(''.join([chr(b) for b in p]))
+    print('=====')
+
+
 except Exception as err:
     print(err)
 

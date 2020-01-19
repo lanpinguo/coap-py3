@@ -33,21 +33,29 @@ def buf2int(buf):
     return returnVal
 
 def buf2str(buf):
-    return ''.join([chr(b) for b in buf])
+    if isinstance(buf,str):
+        buf = buf.encode(encoding='utf-8')
+    return buf
 
-def str2buf(str):
-    return [ord(b) for b in str]
+def str2buf(in_str):
+    if isinstance(in_str,str):
+        in_str = in_str.encode(encoding='utf-8')
+    return in_str
 
 #===== byte manipulation
 
 def xorStrings(s1,s2):
     assert len(s1) == len(s2)
-    print(type(s1))
-    print(type(s2))
-    return ''.join(chr(a ^ b) for a, b in zip(s1, s2))
+    if isinstance(s1,str):
+        s1 = s2.encode(encoding='utf-8')
+    if isinstance(s2,str):
+        s2 = s2.encode(encoding='utf-8')
+    return bytes((a ^ b) for a, b in zip(s1, s2))
 
 def zeroPadString(s1, len):
-    return '{:\0>{width}}'.format(s1, width=len)
+    output = '{!s:\0>{width}}'.format(s1, width=len)
+    #print(output)
+    return output.encode(encoding='utf-8')
 
 def flipFirstBit(s1):
     return xorStrings(s1, '\x80' + '\x00' * (len(s1) - 1))

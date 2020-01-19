@@ -15,7 +15,7 @@ import coap.coapOption         as o
 import coap.coapUtils          as u
 
 import binascii
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 
 def encodeOptions(options, lastOptionNum=0):
     encoded = []
@@ -74,8 +74,10 @@ def protectMessage(context, version, code, options = [], payload = [], partialIV
     plaintext = u.buf2str(plaintext) # convert to string
 
     # construct aad
-
-    requestSeq = partialIV.lstrip('\0')
+    partialIV = bytes(partialIV)
+    #print("type: %s" % type(partialIV))
+    #print(partialIV)
+    requestSeq = partialIV.lstrip(b'\0')
 
     # construct nonce
     if _isRequest(code):
@@ -143,8 +145,11 @@ def unprotectMessage(context, version, code, options = [], ciphertext = [], part
             raise e.oscoapError('Replay protection failed')
     else:
         requestKid = context.senderID
-
-    requestSeq = partialIV.lstrip('\0')
+    if isinstance(partialIV,str):
+        partialIV = partialIV.encode(encoding='utf-8')
+    #print(type(partialIV))
+    #print(partialIV)
+    requestSeq = partialIV.lstrip(b'\0')
 
     aad = _constructAAD(version,
                         code,
@@ -276,7 +281,7 @@ def _constructAAD(version, code, optionsSerialized, aeadAlgorithm, requestKid, r
 
     # from https://tools.ietf.org/html/draft-ietf-cose-msg-24#section-5.3
     encStructure = [
-        unicode('Encrypt0'),
+        'Encrypt0',
         '',  # an empty byte string
         externalAad
     ]
@@ -332,11 +337,14 @@ class CCMAlgorithm():
 
         if self.ivLength != len(nonce):
             raise e.oscoapError('IV length mismatch.')
-
-        cipher = AES.new(key, AES.MODE_CCM, nonce, mac_len=self.tagLength)
+        #print(type(nonce))
+        if isinstance(nonce,str):
+            nonce = nonce.encode(encoding='utf-8')
+        cipher = AES.new(key, AES.MODE_CCM, nonce,mac_len=self.tagLength)
         if aad:
             cipher.update(aad)
-        ciphertext = cipher.encrypt(plaintext)
+        #print("param tyep: %s" % type(plaintext))
+        ciphertext = cipher.encrypt(bytes(plaintext))
         digest = cipher.digest()
         ciphertext = ciphertext + digest
         return ciphertext

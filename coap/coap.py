@@ -222,7 +222,7 @@ class coap(object):
                 if not v.isAlive():
                     deactive.append(k)
             for i in deactive:
-                del self.transmitters[k]
+                del self.transmitters[i]
     #===== receive
 
     def _receive(self,timestamp,sender,rawbytes):

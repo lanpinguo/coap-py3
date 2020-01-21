@@ -8,7 +8,7 @@ log.addHandler(NullHandler())
 
 import socket
 import time
-
+import select
 from coap import socketUdp
 import threading
 
@@ -43,6 +43,8 @@ class socketUdpReal(socketUdp.socketUdp):
         except (AttributeError, ValueError):
             log.info('Your system does not support dual stack sockets. IPv4 is not enabled.')
 
+        self.active = True
+        
         # start myself
         self.start()
     
@@ -63,46 +65,72 @@ class socketUdpReal(socketUdp.socketUdp):
     
     def close(self):
         # declare that this thread has to stop
-        self.goOn = False
-        
-        # send some dummy value into the socket to trigger a read
-        self.socket_handler.sendto( b'stop', ('::1',self.udpPort) )
+        self.active = False
         
         # wait for this thread to exit
         self.join()
-    
+
     #======================== private =========================================
-    
-    def run(self):
-        while self.goOn:
+    def _socket_ready_handle(self, s):
+        """
+        Handle an input-ready socket
+
+        @param s The socket object that is ready
+        @returns 0 on success, -1 on error
+        """
+
+        if s and s == self.socket_handler:
             try:
                 # blocking wait for something from UDP socket
                 raw,conn = self.socket_handler.recvfrom(self.BUFSIZE)
             except socket.error as err:
                 log.critical("socket error: {0}".format(err))
-                self.goOn = False
-                continue
+                return -1
             else:
                 if not raw:
                     log.error("no data read from socket, stopping")
-                    self.goOn = False
-                    continue
-                if not self.goOn:
-                    log.warning("goOn is false")
-                    continue
-                
-                timestamp = time.time()
-                source    = (conn[0],conn[1])
-                #data      = [ord(b) for b in raw] #python2
-                data      = raw  #python3
-                
-                log.debug("got {2} from {1} at {0}".format(timestamp,source,data))
-                
-                #call the callback with the params
-                self.callback(timestamp,source,data)
-        
-        # if you get here, we are tearing down the socket
-        
+                    return -1
+                if not self.active:
+                    log.warning("active is false")
+                    return -1
+
+            timestamp = time.time()
+            source    = (conn[0],conn[1])
+            #data      = [ord(b) for b in raw] #python2
+            data      = raw  #python3
+            
+            log.debug("got {2} from {1} at {0}".format(timestamp,source,data))
+            
+            #call the callback with the params
+            self.callback(timestamp,source,data)
+        else:
+            log.error("Unknown socket ready: " + str(s))
+            return -1
+
+        return 0
+
+
+    def run(self):
+        epoll = select.epoll()
+        epoll.register(self.socket_handler.fileno(), select.EPOLLIN)
+        fd_to_socket = {self.socket_handler.fileno():self.socket_handler,}
+
+        while self.active:
+            events = epoll.poll(2)
+            if not events:
+                continue 
+
+            for fd, event in events:    
+                if event & select.EPOLLIN:   
+                    sock = fd_to_socket[fd]
+                    if self._socket_ready_handle(sock) != 0:
+                        self.active = False
+                        break
+ 
+       # if you get here, we are tearing down the socket
+        log.debug("closing ")
+        epoll.unregister(self.socket_handler.fileno())
+        epoll.close()       
         # close the socket
         self.socket_handler.close()
         
